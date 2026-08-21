@@ -72,7 +72,8 @@ Instead of generated values benchmark can replay real data: `--file` reads the w
 are not applicable in this mode:
 
 ```
-clickhouse client --query "SELECT toUInt64(CounterID) AS value FROM hits INTO OUTFILE 'CounterID.bin'
+clickhouse client --query "SELECT toUInt64(CounterID) AS value FROM hits
+    INTO OUTFILE 'CounterID.bin'
     FORMAT RowBinaryWithNamesAndTypes SETTINGS max_threads = 1"
 
 k_way_merge_benchmark --strategy heap --K 1024 --file CounterID.bin
@@ -171,15 +172,8 @@ and rank encoded hits columns benchmark with different `--strategies`, `--cursor
 all strategies, cursors sizes, cardinalities and columns are specified:
 
 ```
-./benchmark_random.py
-./benchmark.py
-```
-
-Build plots from generated data benchmark output (a new `plots` folder will be created):
-
-```
-./benchmark_random.py > results.txt
-./plots.py results.txt
+./benchmark_random.py -j 16
+./benchmark.py -j 16
 ```
 
 ## Data structures included
