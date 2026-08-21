@@ -1,7 +1,5 @@
 # K-way merge benchmark
 
-## Motivation
-
 This benchmark is created to compare different sorting data structures for [k-way merge algorithm](https://en.wikipedia.org/wiki/K-way_merge_algorithm)
 scenario, merging `K` sorted streams into a single sorted stream.
 
@@ -27,28 +25,27 @@ In both modes every cursor is sorted locally before the merge.
 
 Elements are compared as `(value, cursor_index)` pairs, so comparisons form total order and merge is stable.
 
-Results on real data. Rank encoded columns of the ClickBench hits dataset (100 million rows), split into K = 256 cursors in table order, each cursor sorted locally and merged. Metric: average number of comparisons per element, lower is better.
-```
-┌───────────────────────────────────────────────────┬────────┬────────────────┬──────────────┬──────────────┬────────────┐
-│                       Column                      │  heap  │ heap_bottom_up │ sorted_array │ abseil_btree │ loser_tree │
-├───────────────────────────────────────────────────┼────────┼────────────────┼──────────────┼──────────────┼────────────┤
-│ CounterID (primary key, sorted)                   │  0.996 │          0.996 │        0.996 │        0.996 │      4.000 │
-│ AdvEngineID (19 distinct values)                  │  1.000 │          1.000 │        1.000 │        1.000 │      7.865 │
-│ TraficSourceID (10 distinct values)               │  1.000 │          1.000 │        1.000 │        1.000 │      7.986 │
-│ RegionID (9K distinct values)                     │  1.044 │          1.029 │        1.027 │        1.027 │      8.000 │
-│ SearchPhrase (6M distinct values, ~90% empty)     │  1.658 │          1.755 │        1.563 │        1.587 │      8.000 │
-│ URL (18.3M distinct values)                       │  1.969 │          3.029 │        2.300 │        2.361 │      7.984 │
-│ UserID (17.6M distinct values)                    │  3.069 │          3.082 │        2.637 │        2.678 │      7.603 │
-│ URLHash (20.7M distinct values)                   │  4.074 │          3.425 │        3.092 │        3.151 │      8.000 │
-│ EventTime (1.4M distinct values)                  │  4.926 │          4.363 │        3.810 │        3.924 │      7.733 │
-│ WatchID (almost unique)                           │ 13.066 │          9.916 │        8.965 │        9.114 │      8.000 │
-└───────────────────────────────────────────────────┴────────┴────────────────┴──────────────┴──────────────┴────────────┘
-```
+Results on real data. Rank encoded columns of the ClickBench hits dataset (100 million rows), split into K = 256 cursors in table order, each cursor sorted locally and merged. Metric: average number of comparisons per element, lower is better, best result is in bold.
+
+| Column                                        |       heap | heap_bottom_up | sorted_array | abseil_btree | loser_tree |
+|-----------------------------------------------|-----------:|---------------:|-------------:|-------------:|-----------:|
+| CounterID (primary key, sorted)               |  **0.996** |      **0.996** |    **0.996** |    **0.996** |      4.000 |
+| AdvEngineID (19 distinct values)              |  **1.000** |      **1.000** |    **1.000** |    **1.000** |      7.865 |
+| TraficSourceID (10 distinct values)           |  **1.000** |      **1.000** |    **1.000** |    **1.000** |      7.986 |
+| RegionID (9K distinct values)                 |      1.044 |          1.029 |    **1.027** |    **1.027** |      8.000 |
+| SearchPhrase (6M distinct values, ~90% empty) |      1.658 |          1.755 |    **1.563** |        1.587 |      8.000 |
+| URL (18.3M distinct values)                   |  **1.969** |          3.029 |        2.300 |        2.361 |      7.984 |
+| UserID (17.6M distinct values)                |      3.069 |          3.082 |    **2.637** |        2.678 |      7.603 |
+| URLHash (20.7M distinct values)               |      4.074 |          3.425 |    **3.092** |        3.151 |      8.000 |
+| EventTime (1.4M distinct values)              |      4.926 |          4.363 |    **3.810** |        3.924 |      7.733 |
+| WatchID (almost unique)                       |     13.066 |          9.916 |        8.965 |        9.114 |  **8.000** |
 
 Results on random data:
 ![Random data results](images/random_data_results.png)
 
 For more information, take a look at my blog post about [k-way merge](https://maksimkita.com/blog/k-way-merge.html).
+
+For full results, see [RESULTS.md](RESULTS.md).
 
 ## Examples
 
@@ -194,71 +191,6 @@ Build plots from generated data benchmark output (a new `plots` folder will be c
 - [x] Sorted Array with index width specialization
 - [x] Implicit Treap, sorted array on top of cartesian tree by implicit key
 - [x] Standard set (depends on standard library implementation)
-
-## Results
-
-For full results, see [RESULTS.md](RESULTS.md).
-
-Low cardinality, adaptive data structures converge to ~1 comparison per element, loser tree pays its oblivious ~log2(K):
-
-```
-Layout: random
-Cardinality: 10
-Elements size: 10000000
-Metric: comparisons per element
-+----------------+-------+--------+--------+---------+----------+
-| Strategy       | K = 4 | K = 16 | K = 64 | K = 256 | K = 1024 |
-+----------------+-------+--------+--------+---------+----------+
-| heap           | 0.975 | 0.994  | 0.999  |  1.003  |  1.017   |
-| loser_tree     | 1.900 | 3.800  | 5.699  |  7.599  |  9.499   |
-| btree          | 0.975 | 0.994  | 0.999  |  1.001  |  1.009   |
-| abseil_btree   | 0.975 | 0.994  | 0.999  |  1.001  |  1.008   |
-| sorted_array   | 0.975 | 0.994  | 0.999  |  1.001  |  1.009   |
-| implicit_treap | 0.975 | 0.994  | 0.999  |  1.001  |  1.009   |
-| std_set        | 0.975 | 0.994  | 0.999  |  1.003  |  1.018   |
-+----------------+-------+--------+--------+---------+----------+
-```
-
-Medium cardinality: adaptive data structures degrade gracefully as amount of duplicates shrinks, and heap
-degrades faster than sorted array and b-trees:
-
-```
-Layout: random
-Cardinality: 1000
-Elements size: 10000000
-Metric: comparisons per element
-+----------------+-------+--------+--------+---------+----------+
-| Strategy       | K = 4 | K = 16 | K = 64 | K = 256 | K = 1024 |
-+----------------+-------+--------+--------+---------+----------+
-| heap           | 1.000 | 1.008  | 1.058  |  1.333  |  2.740   |
-| loser_tree     | 1.999 | 3.998  | 5.997  |  7.996  |  9.995   |
-| btree          | 1.001 | 1.005  | 1.034  |  1.188  |  1.958   |
-| abseil_btree   | 1.001 | 1.006  | 1.028  |  1.161  |  1.799   |
-| sorted_array   | 1.000 | 1.005  | 1.032  |  1.179  |  1.927   |
-| implicit_treap | 1.000 | 1.005  | 1.032  |  1.179  |  1.927   |
-| std_set        | 1.001 | 1.010  | 1.065  |  1.359  |  2.844   |
-+----------------+-------+--------+--------+---------+----------+
-```
-
-All values unique, loser tree wins, sorted array and b-trees stay close, heap pays up to 2 * log2(K):
-
-```
-Layout: random
-Cardinality: 10000000 (elements)
-Elements size: 10000000
-Metric: comparisons per element
-+----------------+-------+--------+--------+---------+----------+
-| Strategy       | K = 4 | K = 16 | K = 64 | K = 256 | K = 1024 |
-+----------------+-------+--------+--------+---------+----------+
-| heap           | 2.230 | 5.550  | 9.201  |  13.066 |  17.020  |
-| loser_tree     | 2.000 | 4.000  | 6.000  |  8.000  |  10.000  |
-| btree          | 2.477 | 4.831  | 7.045  |  9.152  |  11.284  |
-| abseil_btree   | 2.477 | 4.732  | 7.078  |  9.112  |  11.212  |
-| sorted_array   | 2.225 | 4.669  | 6.884  |  8.962  |  10.988  |
-| implicit_treap | 2.225 | 4.669  | 6.884  |  8.962  |  10.988  |
-| std_set        | 3.215 | 5.868  | 8.171  |  10.297 |  12.342  |
-+----------------+-------+--------+--------+---------+----------+
-```
 
 # How to add a new data structure
 
