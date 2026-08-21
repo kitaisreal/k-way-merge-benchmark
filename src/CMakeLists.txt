@@ -1,0 +1,3 @@
+add_headers_and_sources(k_way_merge_benchmark ${CMAKE_CURRENT_SOURCE_DIR})
+add_executable(k_way_merge_benchmark ${k_way_merge_benchmark_headers} ${k_way_merge_benchmark_sources})
+target_link_libraries(k_way_merge_benchmark PRIVATE abseil_btree)
